@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://c3qqyyji4t30e"]
+
+[sub_resource type="GDScript" id="GDScript_o4ltc"]
+resource_name = "tele"
+script/source = "extends Area2D
+
+@export var target_marker: Marker2D
+
+func _on_body_entered(body: Node2D) -> void:
+	print(\"Something entered: \", body.name)
+	if body.is_in_group(\"player_group\"):
+		print(\"It's the player\")
+		if target_marker:
+			print(\"Teleporting to: \", target_marker.global_position)
+			body.global_position = target_marker.global_position
+		else:
+			print(\"target_marker is NOT assigned!\")
+	else:
+		print(\"Not in player_group\")
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4h8hh"]
+size = Vector2(221, 659)
+
+[node name="Area2D" type="Area2D" unique_id=912272911]
+script = SubResource("GDScript_o4ltc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=127504528]
+position = Vector2(100.5, 319.5)
+shape = SubResource("RectangleShape2D_4h8hh")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

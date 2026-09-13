@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://cocjamaqw3ut0"]
+
+[ext_resource type="Texture2D" uid="uid://cljbtd8qmtwaw" path="res://everything/computer_64x64.png" id="1_1n30v"]
+[ext_resource type="Script" uid="uid://xi4kmmueuva2" path="res://computer.gd" id="1_35kre"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cu52k"]
+size = Vector2(67, 104.125)
+
+[sub_resource type="LabelSettings" id="LabelSettings_7yhko"]
+font_size = 11
+font_color = Color(1, 0, 0, 1)
+
+[node name="computer" type="Area2D" unique_id=193407869]
+collision_layer = 4
+collision_mask = 255
+script = ExtResource("1_35kre")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=374063904]
+z_index = 5
+position = Vector2(-0.5, 12.9375)
+shape = SubResource("RectangleShape2D_cu52k")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1389002552]
+z_index = 3
+texture = ExtResource("1_1n30v")
+
+[node name="Label" type="Label" parent="." unique_id=647928854]
+visible = false
+z_index = 6
+offset_left = -52.0
+offset_top = -29.0
+offset_right = 55.0
+offset_bottom = -6.0
+text = "Press [E] To Turn On"
+label_settings = SubResource("LabelSettings_7yhko")
+
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]
+[connection signal="area_exited" from="." to="." method="_on_area_exited"]
+[connection signal="area_shape_entered" from="." to="." method="_on_area_shape_entered"]
+[connection signal="area_shape_exited" from="." to="." method="_on_area_shape_exited"]
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]
+[connection signal="body_shape_entered" from="." to="." method="_on_body_shape_entered"]
+[connection signal="body_shape_exited" from="." to="." method="_on_body_shape_exited"]

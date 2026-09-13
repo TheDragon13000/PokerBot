@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://cf1rl6phq3bx6"]
+
+[ext_resource type="PackedScene" uid="uid://bk0dtk3eqo0v8" path="res://doorfliped.tscn" id="1_cxn1o"]
+
+[sub_resource type="GDScript" id="GDScript_pl0yl"]
+script/source = "extends Area2D
+@onready var label: Label = $Label
+@onready var sprite_2d: Sprite2D = $Sprite2D
+
+@export var target_room: int = 1   # set per-door in the Inspector: which room this door leads to
+
+var player_in_range: bool = false
+
+func _ready() -> void:
+	label.visible = false
+	sprite_2d.visible = false
+
+func _on_body_entered(_body):
+	label.visible = true
+	sprite_2d.visible = true
+	player_in_range = true
+
+func _on_body_exited(_body):
+	label.visible = false
+	sprite_2d.visible = false
+	player_in_range = false
+
+func _on_area_entered(_area: Area2D) -> void:
+	pass
+
+func _on_area_exited(_area: Area2D) -> void:
+	pass
+
+func _on_area_shape_entered(_area_rid: RID, _area: Area2D, _area_shape_index: int, _local_shape_index: int) -> void:
+	pass
+
+func _unhandled_input(event: InputEvent) -> void:
+	if player_in_range and event.is_action_pressed(\"Interact\"):
+		var dt = get_tree().get_first_node_in_group(\"door_transport_group\")
+		if dt:
+			dt.go_to_room(target_room)
+		else:
+			print(\"door transport not found in group!\")
+"
+
+[node name="camera2" type="Camera2D" unique_id=2141786835]
+position = Vector2(344, 43)
+zoom = Vector2(4.596, 4.4)
+
+[node name="computer" parent="." unique_id=193407869 instance=ExtResource("1_cxn1o")]
+script = SubResource("GDScript_pl0yl")
+target_room = 1

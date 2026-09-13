@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://fv3y1xtbdagp"]
+
+[ext_resource type="Texture2D" uid="uid://ciait3m7kmjhj" path="res://everything/ChatGPT Image Aug 5, 2026, 09_09_33 PM.png" id="1_ba8gm"]
+
+[sub_resource type="GDScript" id="GDScript_okuyq"]
+script/source = "extends Area2D
+
+@onready var label: Label = $Label
+@onready var sprite_2d: Sprite2D = $Sprite2D
+
+
+
+func _ready():
+	sprite_2d.visible = false
+	label.visible = false
+
+func _on_body_entered(_body):
+	label.visible = true
+	sprite_2d.visible = true
+
+func _on_body_exited(_body):
+	label.visible = false
+	sprite_2d.visible = false
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_cu52k"]
+radius = 370.53003
+
+[node name="Area2D" type="Area2D" unique_id=1381431743]
+collision_layer = 4
+collision_mask = 255
+script = SubResource("GDScript_okuyq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1193400242]
+shape = SubResource("CircleShape2D_cu52k")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=381086636]
+z_index = 6
+scale = Vector2(0.384, 0.355)
+texture = ExtResource("1_ba8gm")
+
+[node name="Label" type="Label" parent="." unique_id=1736921983]
+z_index = 5
+offset_left = -448.0
+offset_top = -289.0
+offset_right = 627.0
+offset_bottom = -152.0
+theme_override_font_sizes/font_size = 100
+text = "Press [E] To open door"
