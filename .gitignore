@@ -1,3 +1,18 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Godot 4 (the .godot/ cache is already ignored above)
+export/
+*.tmp
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+poker_progress.json
