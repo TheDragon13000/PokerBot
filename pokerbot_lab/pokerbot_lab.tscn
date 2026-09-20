@@ -1,0 +1,110 @@
+[gd_scene load_steps=3 format=3 uid="uid://c0pokerbotlab1"]
+
+[ext_resource type="Script" path="res://pokerbot_lab/pokerbot_lab.gd" id="1_lab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+bg_color = Color(0.0863, 0.125, 0.157, 1)
+border_width_left = 3
+border_color = Color(0.439, 0.89, 0.608, 1)
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+
+[node name="PokerBotLab" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_lab")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Background" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0314, 0.0471, 0.0627, 0.97)
+
+[node name="Margin" type="MarginContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Layout" type="VBoxContainer" parent="Root/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Root/Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/Margin/Layout/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.933, 0.976, 0.949, 1)
+theme_override_font_sizes/font_size = 18
+text = "♠ POKERBOT LAB"
+
+[node name="Status" type="Label" parent="Root/Margin/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.62, 0.69, 0.72, 1)
+theme_override_font_sizes/font_size = 13
+text = ""
+horizontal_alignment = 1
+
+[node name="Close" type="Button" parent="Root/Margin/Layout/Header"]
+layout_mode = 2
+text = "Close  (Esc)"
+
+[node name="Screen" type="Control" parent="Root/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 1
+
+[node name="WebView" type="WebView" parent="Root/Margin/Layout/Screen"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+full_window_size = false
+data_directory = "user://bet2bot_webview"
+devtools = false
+focused_when_created = false
+forward_input_events = true
+
+[node name="Loading" type="Label" parent="Root/Margin/Layout/Screen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -12.0
+offset_right = 200.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.439, 0.89, 0.608, 1)
+theme_override_font_sizes/font_size = 16
+text = "Booting Bet2Bot (Python engine loading)…"
+horizontal_alignment = 1
+vertical_alignment = 1
