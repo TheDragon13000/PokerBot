@@ -1,0 +1,189 @@
+diff --git a/rust/src/lib.rs b/rust/src/lib.rs
+index 40435e1..138e24c 100644
+--- a/rust/src/lib.rs
++++ b/rust/src/lib.rs
+@@ -6,6 +6,7 @@ mod protocols;
+ use godot::global::MouseButtonMask;
+ use godot::init::*;
+ use godot::prelude::*;
++use godot::classes::display_server::HandleType;
+ use godot::classes::{Control, DisplayServer, IControl, InputEvent, InputEventMouseButton, InputEventMouseMotion, InputEventKey, ProjectSettings, Viewport};
+ use godot::global::{Key, MouseButton};
+ use lazy_static::lazy_static;
+@@ -14,6 +15,9 @@ use std::collections::HashMap;
+ use std::sync::{Arc, Mutex};
+ use std::path::PathBuf;
+ use wry::{WebViewBuilder, WebContext, Rect, WebViewAttributes, PageLoadEvent};
++#[cfg(target_os = "macos")]
++use wry::dpi::{LogicalPosition, LogicalSize};
++#[cfg(not(target_os = "macos"))]
+ use wry::dpi::{PhysicalPosition, PhysicalSize};
+ use wry::http::Request;
+ 
+@@ -205,6 +209,25 @@ impl WebView {
+             return;
+         }
+ 
++        // The editor's embedded game window (Godot 4.4+) runs the game through a display
++        // server with no native window; there is nothing to attach a WebView to. Bail out
++        // with a clear message instead of panicking inside the window-handle lookup.
++        let probe_window_id = self.base().get_window()
++            .map(|w| w.get_window_id())
++            .unwrap_or(0);
++        #[cfg(target_os = "macos")]
++        let probe = display_server.window_get_native_handle_ex(HandleType::WINDOW_VIEW).window_id(probe_window_id).done();
++        #[cfg(not(target_os = "macos"))]
++        let probe = display_server.window_get_native_handle_ex(HandleType::WINDOW_HANDLE).window_id(probe_window_id).done();
++        if probe == 0 {
++            godot_warn!(
++                "Godot WRY: this display server exposes no native window handle (is the game \
++                 embedded in the editor?). WebView will not be created. Disable \
++                 'Embed Game on Next Play' in the Game view, or run the exported build."
++            );
++            return;
++        }
++
+         #[cfg(target_os = "linux")]
+         gtk::init().expect("Failed to initialize GTK");
+ 
+@@ -587,6 +610,11 @@ impl WebView {
+     #[func]
+     fn resize(&self) {
+         if let Some(webview) = &self.webview {
++            // Godot reports window/viewport sizes in its own pixel units. On macOS those are
++            // points * screen_get_max_scale() for *every* window, regardless of which display
++            // it is on (a 1x monitor next to a Retina panel still gets 2x units). Convert with
++            // Godot's factor and hand wry *logical* bounds, so it never re-derives a scale from
++            // the NSWindow's backingScaleFactor (which differs per display).
+             let rect = if self.full_window_size {
+                 let window_size = self.base().get_window()
+                     .map(|w| w.get_size())
+@@ -594,56 +622,98 @@ impl WebView {
+                         self.base().get_tree().expect("Could not get tree")
+                             .get_root().expect("Could not get viewport").get_size()
+                     });
+-                Rect {
+-                    position: PhysicalPosition::new(0, 0).into(),
+-                    size: PhysicalSize::new(window_size.x, window_size.y).into(),
+-                }
++                let offset = self.embedded_window_offset();
++                Self::make_rect(offset, Vector2::new(window_size.x as f32, window_size.y as f32))
+             } else {
+-                let pos = self.compute_native_position();
+-                let size = self.base().get_size();
+-                let (scale_x, scale_y) = self.get_content_scale();
+-                let phys_x = (pos.x * scale_x).round();
+-                let phys_y = (pos.y * scale_y).round();
+-                Rect {
+-                    position: PhysicalPosition::new(phys_x, phys_y).into(),
+-                    size: PhysicalSize::new(size.x * scale_x, size.y * scale_y).into(),
+-                }
++                let (pos, size) = self.compute_native_rect();
++                Self::make_rect(pos, size)
+             };
+             let _ = webview.set_bounds(rect);
+         }
+     }
+ 
+-    fn compute_native_position(&self) -> Vector2 {
+-        let mut pos = self.base().get_global_position();
+-        let mut current = self.base().get_window();
++    /// Build wry bounds from a rect in Godot pixel units.
++    fn make_rect(pos: Vector2, size: Vector2) -> Rect {
++        #[cfg(target_os = "macos")]
++        {
++            let s = Self::godot_pixel_scale();
++            Rect {
++                position: LogicalPosition::new(pos.x / s, pos.y / s).into(),
++                size: LogicalSize::new(size.x / s, size.y / s).into(),
++            }
++        }
++        #[cfg(not(target_os = "macos"))]
++        {
++            Rect {
++                position: PhysicalPosition::new(pos.x.round(), pos.y.round()).into(),
++                size: PhysicalSize::new(size.x.round(), size.y.round()).into(),
++            }
++        }
++    }
++
++    /// Godot pixel units per native point. macOS: screen_get_max_scale(); elsewhere Godot's
++    /// window pixels are the OS's physical pixels, and wry expects physical there, so 1.0.
++    #[cfg(target_os = "macos")]
++    fn godot_pixel_scale() -> f32 {
++        let s = DisplayServer::singleton().screen_get_max_scale();
++        if s > 0.0 { s } else { 1.0 }
++    }
+ 
++    /// Sum of the positions of every embedded Window between this control and the
++    /// first native (non-embedded) window, in Godot pixel units.
++    fn embedded_window_offset(&self) -> Vector2 {
++        let mut offset = Vector2::default();
++        let mut current = self.base().get_window();
+         while let Some(window) = current {
+             if !window.is_embedded() {
+                 break;
+             }
+             let win_pos = window.get_position();
+-            pos += Vector2::new(win_pos.x as f32, win_pos.y as f32);
++            offset += Vector2::new(win_pos.x as f32, win_pos.y as f32);
+             current = window.get_parent().and_then(|p| p.get_window());
+         }
+-        pos
++        offset
+     }
+ 
+-    fn get_content_scale(&self) -> (f32, f32) {
+-        if let Some(window) = self.base().get_window() {
+-            let window_size = window.get_size();
+-            if let Some(viewport) = self.base().get_viewport() {
+-                let vp_size = viewport.get_visible_rect().size;
+-                if vp_size.x > 0.0 && vp_size.y > 0.0 {
+-                    return (
+-                        window_size.x as f32 / vp_size.x,
+-                        window_size.y as f32 / vp_size.y,
+-                    );
+-                }
++    /// Control rect in the containing Viewport's pixel space (Godot units). Applies the
++    /// canvas transform *and* the Window's stretch transform, so
++    /// `stretch/mode = canvas_items` resolves to real viewport pixels.
++    fn compute_native_rect(&self) -> (Vector2, Vector2) {
++        let mut xform = self.base().get_global_transform_with_canvas();
++        if let Some(viewport) = self.base().get_viewport() {
++            xform = viewport.get_final_transform() * xform;
++        }
++        let size = self.base().get_size();
++        let scale_x = xform.a.length();
++        let scale_y = xform.b.length();
++        let pos = xform.origin + self.embedded_window_offset();
++        (pos, Vector2::new(size.x * scale_x, size.y * scale_y))
++    }
++
++    fn compute_native_position(&self) -> Vector2 {
++        self.compute_native_rect().0
++    }
++
++    /// Actual native view bounds in *logical* (point) coordinates, top-left origin,
++    /// relative to the native window's content view. Debug/verification aid.
++    #[func]
++    fn get_native_bounds(&self) -> Rect2 {
++        if let Some(webview) = &self.webview {
++            if let Ok(rect) = webview.bounds() {
++                let pos = rect.position.to_logical::<f64>(1.0);
++                let size = rect.size.to_logical::<f64>(1.0);
++                return Rect2::new(
++                    Vector2::new(pos.x as f32, pos.y as f32),
++                    Vector2::new(size.width as f32, size.height as f32),
++                );
+             }
+         }
+-        (1.0, 1.0)
++        Rect2::default()
+     }
+ 
++
++
++
+     #[func]
+     fn eval(&self, script: GString) {
+         if let Some(webview) = &self.webview {

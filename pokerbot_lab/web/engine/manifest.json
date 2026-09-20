@@ -1,0 +1,21 @@
+{
+  "files": [
+    "poker/__init__.py",
+    "poker/action.py",
+    "poker/bots/__init__.py",
+    "poker/bots/examples.py",
+    "poker/bots/stateful.py",
+    "poker/cards.py",
+    "poker/engine.py",
+    "poker/equity.py",
+    "poker/evaluator.py",
+    "poker/game_api.py",
+    "poker/integration_api.py",
+    "poker/interactive.py",
+    "poker/match.py",
+    "poker/plotting.py",
+    "poker/state.py",
+    "poker/stats.py",
+    "poker/strategy.py"
+  ]
+}
